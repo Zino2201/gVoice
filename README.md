@@ -4,7 +4,9 @@ gVoice
 Simple wrapper around the .NET `System.Speech` API (**Windows Only**)
 
 ## How to install
-todo
+- Install the .gma to your garrysmod/addons directory (or use the Workshop version)
+- Put the .dll into your garrysmod/lua/bin directory
+**NOTE: Use the win32 dll if you use 32-bit Garry's Mod !**
 
 ## Features
 - Basic text to speech

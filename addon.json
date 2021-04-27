@@ -1,0 +1,6 @@
+{
+    "title": "gVoice",
+    "description": "Simple wrapper around the .NET System.Speech API",
+    "type": "ServerContent",
+    "tags": [ "roleplay", "realism" ]
+}
