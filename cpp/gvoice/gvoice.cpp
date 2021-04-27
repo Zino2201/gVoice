@@ -220,7 +220,9 @@ LUA_FUNCTION(InitRecognition)
 		while(LUA->Next(2) != 0)
 		{
 			const char* value = LUA->GetString(-1);
-			choices->Add(gcnew String(value));
+			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+			std::wstring wide_str = converter.from_bytes(value);
+			choices->Add(gcnew String(wide_str.c_str(), 0, static_cast<int>(wide_str.size())));
 			LUA->Pop();	
 		}
 
@@ -263,7 +265,10 @@ LUA_FUNCTION(StartRecognition)
 {
 	if(Globals::engine && Globals::grammar)
 	{
-		is_listening = true;
+		if(is_listening)
+			Globals::engine->RecognizeAsyncStop();
+		else
+			is_listening = true;
 		Globals::engine->RecognizeAsync(RecognizeMode::Multiple);
 		LUA->PushBool(true);
 	}
