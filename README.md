@@ -1,6 +1,8 @@
 gVoice
 ================
 
+![](logo.png)
+
 Simple wrapper around the .NET `System.Speech` API (**Windows Only**)
 
 ## How to install
@@ -52,4 +54,5 @@ gvoice.Speak("Hello !", 100, 1, gvoice.Male, gvoice.Senior)
 
 ## Credits
 Zino - C++ module
+
 Nogitsu - Helping with logics and API (en plus c un bg)
