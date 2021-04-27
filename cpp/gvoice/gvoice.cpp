@@ -126,12 +126,16 @@ LUA_FUNCTION(FlushRecognitionQueue)
  * \param str : What to speaks
  * \param vol (optional): Volume (defaults 100)
  * \param rate (optional): Rate (defaults 1)
+ * \param gender (optional): Gender (defaults to Undefined)
+ * \param age (optional): Age (defaults to Undefined)
  */
 LUA_FUNCTION(Speak)
 {
 	const char* str = LUA->CheckString(1);
 	int volume = 100;
 	int rate = 1;
+	VoiceGender gender = VoiceGender::NotSet;
+	VoiceAge age = VoiceAge::NotSet;
 
 	/** Voice */
 	if(LUA->GetType(2) == GarrysMod::Lua::Type::Number)
@@ -141,15 +145,23 @@ LUA_FUNCTION(Speak)
 	if(LUA->GetType(3) == GarrysMod::Lua::Type::Number)
 		rate = static_cast<int>(LUA->GetNumber(3));
 
+	/** Gender */
+	if(LUA->GetType(4) == GarrysMod::Lua::Type::Number)
+		gender = static_cast<VoiceGender>(LUA->GetNumber(4));
+	
+	/** Age */
+	if(LUA->GetType(5) == GarrysMod::Lua::Type::Number)
+		age = static_cast<VoiceAge>(LUA->GetNumber(5));
+
 	/** Correctly convert from UTF-8 to UTF-16 */
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	std::wstring wide_str = converter.from_bytes(str);
 
 	String^ cs_str = gcnew String(wide_str.data(), 0, static_cast<int>(wide_str.size()));
+	Globals::synthesizer->SelectVoiceByHints(VoiceGender::Male, VoiceAge::Adult, 0, Globals::culture);
 	Globals::synthesizer->Rate = rate;
-	Globals::synthesizer->Volume = volume;
+	Globals::synthesizer->Volume = volume; 
 	Globals::synthesizer->SpeakAsync(cs_str);
-
 	return 0;
 }
 
@@ -279,6 +291,15 @@ LUA_FUNCTION(IsListening)
 	return 1;
 }
 
+LUA_FUNCTION(GetVersion)
+{
+	std::string version = fmt::format("{}.{}.{}", gvoice_major_version,
+		gvoice_minor_version,
+		gvoice_patch_version);
+	LUA->PushString(version.c_str(), static_cast<uint32_t>(version.size()));
+	return 1;
+}
+
 GMOD_MODULE_OPEN()
 {
 	gvlog::Info(LUA, "=== gvoice v{}.{}.{} ===", 
@@ -310,6 +331,8 @@ GMOD_MODULE_OPEN()
 	LUA->SetField(-2, "FlushRecognitionQueue");
 	LUA->PushCFunction(IsListening);
 	LUA->SetField(-2, "IsListening");
+	LUA->PushCFunction(GetVersion);
+	LUA->SetField(-2, "GetVersion");
 
 	LUA->SetField(-2, "gvoice");
 
