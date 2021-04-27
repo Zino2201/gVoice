@@ -30,6 +30,7 @@ public:
 
 /** Global speech queue */
 std::queue<std::string> recognition_queue;
+bool is_listening = false;
 
 /** 
  * Logging API
@@ -183,9 +184,6 @@ LUA_FUNCTION(InitRecognition)
 	/** Build the grammar if provided */
 	if(LUA->IsType(2, GarrysMod::Lua::Type::Table))
 	{
-		GrammarBuilder^ builder = gcnew GrammarBuilder();
-		builder->Culture = Globals::culture;
-
 		Choices^ choices = gcnew Choices();
 
 		LUA->PushNil();
@@ -193,11 +191,18 @@ LUA_FUNCTION(InitRecognition)
 		{
 			const char* value = LUA->GetString(-1);
 			choices->Add(gcnew String(value));
-			LUA->Pop();
+			LUA->Pop();	
 		}
 
+		GrammarBuilder^ builder = gcnew GrammarBuilder();
+		builder->Culture = Globals::culture;
 		builder->Append(choices);
-		Globals::grammar = gcnew Grammar(builder);
+
+		try
+		{
+			Globals::grammar = gcnew Grammar(builder);
+		}
+		catch(Exception^) {}
 	}
 	else
 	{
@@ -207,15 +212,15 @@ LUA_FUNCTION(InitRecognition)
 	/**
 	 * Load the builded grammar
 	 */
-	try
+	if(Globals::grammar)
 	{
 		Globals::engine->LoadGrammar(Globals::grammar);
 	}
-	catch(Exception^ e)
+	else
 	{
-		gvlog::Error(LUA, "Invalid grammar, using default one. Error: ", Globals::marshal_context->marshal_as<const char*>(e->Message));
-		Globals::grammar = gcnew DictationGrammar();
-		Globals::engine->LoadGrammar(Globals::grammar);
+		gvlog::Error(LUA, "Null grammar! Aborting initialization.");
+		LUA->PushString("");
+		return 1;
 	}
 
 	gvlog::Info(LUA, "Using culture {}", ret_culture);
@@ -226,24 +231,34 @@ LUA_FUNCTION(InitRecognition)
 
 LUA_FUNCTION(StartRecognition)
 {
-	if(Globals::engine)
+	if(Globals::engine && Globals::grammar)
 	{
+		is_listening = true;
 		Globals::engine->RecognizeAsync(RecognizeMode::Multiple);
-		return true;
+		LUA->PushBool(true);
 	}
+	LUA->PushBool(false);
 
-	return false;
+	return 0;
 }
 
 LUA_FUNCTION(StopRecognition)
 {
-	if(Globals::engine)
+	if(Globals::engine && Globals::grammar)
 	{
+		is_listening = false;
 		Globals::engine->RecognizeAsyncStop();
-		return true;
+		LUA->PushBool(true);
 	}
+	LUA->PushBool(false);
 
-	return false;
+	return 0;
+}
+
+LUA_FUNCTION(IsListening)
+{
+	LUA->PushBool(is_listening);
+	return 1;
 }
 
 GMOD_MODULE_OPEN()
@@ -275,6 +290,8 @@ GMOD_MODULE_OPEN()
 	LUA->SetField(-2, "StopRecognition");
 	LUA->PushCFunction(FlushRecognitionQueue);
 	LUA->SetField(-2, "FlushRecognitionQueue");
+	LUA->PushCFunction(IsListening);
+	LUA->SetField(-2, "IsListening");
 
 	LUA->SetField(-2, "gvoice");
 
