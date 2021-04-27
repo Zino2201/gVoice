@@ -46,5 +46,10 @@ gvoice.InitRecognition("fr-FR", { "Baguette", "Bonjour", "Comment allez-vous ?" 
 ### Text to speech
 
 ```lua
-gvoice.Speak("Hello !")
+-- Say "Hello" using a Male Senior voice at Rate 1, volume 100
+gvoice.Speak("Hello !", 100, 1, gvoice.Male, gvoice.Senior)
 ```
+
+## Credits
+Zino - C++ module
+Nogitsu - Helping with logics and API (en plus c un bg)
