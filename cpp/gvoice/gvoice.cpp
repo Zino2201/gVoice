@@ -2,6 +2,8 @@
 #include <msclr/marshal.h>
 #include <queue>
 #include <string>
+#include <locale>
+#include <codecvt>
 #include <fmt/core.h>
 
 #using "System.Speech.dll"
@@ -122,14 +124,30 @@ LUA_FUNCTION(FlushRecognitionQueue)
 /** 
  * Text To Speach
  * \param str : What to speaks
+ * \param vol (optional): Volume (defaults 100)
+ * \param rate (optional): Rate (defaults 1)
  */
 LUA_FUNCTION(Speak)
 {
 	const char* str = LUA->CheckString(1);
+	int volume = 100;
+	int rate = 1;
 
-	String^ cs_str = gcnew String(str);
-	Globals::synthesizer->Rate = 1;
-	Globals::synthesizer->Volume = 100;
+	/** Voice */
+	if(LUA->GetType(2) == GarrysMod::Lua::Type::Number)
+		volume = static_cast<int>(LUA->GetNumber(2));
+
+	/** Rate */
+	if(LUA->GetType(3) == GarrysMod::Lua::Type::Number)
+		rate = static_cast<int>(LUA->GetNumber(3));
+
+	/** Correctly convert from UTF-8 to UTF-16 */
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	std::wstring wide_str = converter.from_bytes(str);
+
+	String^ cs_str = gcnew String(wide_str.data(), 0, static_cast<int>(wide_str.size()));
+	Globals::synthesizer->Rate = rate;
+	Globals::synthesizer->Volume = volume;
 	Globals::synthesizer->SpeakAsync(cs_str);
 
 	return 0;
